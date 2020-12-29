@@ -1,0 +1,41 @@
+version: '3'
+services:
+  web:
+    container_name: web
+    build: web
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./web/app:/usr/local"
+    tty: true
+    working_dir: "/usr/local"
+    user: "1000:1000"
+    environment:
+      - GRADLE_USER_HOME=/usr/local/.gradle
+    depends_on:
+      - db
+    command: >
+      bash -c "./gradlew build &&
+      java -jar ./build/libs/demo-0.0.1-SNAPSHOT.jar"
+
+  db:
+    container_name: db
+    build: db
+    volumes:
+      - ./db/mysql/initdb:/docker-entrypoint-initdb.d
+      - ./db/mysql/config:/etc/mysql/conf.d
+      - ./db/mysql/data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: sample
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+      MYSQL_ROOT_PASSWORD: root
+
+  db-migration:
+    container_name: db-migration
+    build: db-migration
+    volumes:
+      - ./db-migration/conf:/flyway/conf
+      - ./db-migration/sql:/flyway/sql
+    depends_on:
+      - db
